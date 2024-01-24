@@ -135,6 +135,7 @@ class PlumeMetrics():
         dist = np.stack(dist, axis=0)
         velocity = dist[:, 1:] - dist[:, :-1]
         velocity = np.concatenate((dist[:,:1], velocity), axis=1)
+        # velocity[velocity<0] = 0
         return dist, velocity
 
 
@@ -169,7 +170,7 @@ class PlumeMetrics():
         return df
 
 
-def plot_metrics(df, sort_by='condition'):
+def plot_metrics(df, sort_by='condition', ranges=None, legend_title='Condition', custom_labels=None):
     
     '''
     This is a function to plot curves based calculated plume metrics.
@@ -184,9 +185,10 @@ def plot_metrics(df, sort_by='condition'):
                     'eccentricity', 'perimeter', 'distance', 'velocity'] 
     
     for metric in metrics_name:
-        print(metric)
+        # print(metric)
         sns.set(rc={'figure.figsize':(12,8)})
         sns.set_style("white")
+        plt.set_cmap('viridis')
 
         # bin to 10 growth_index classes
         if sort_by == 'growth_index': 
@@ -201,8 +203,24 @@ def plot_metrics(df, sort_by='condition'):
                     for index in range(start_index_list[i], start_index_list[i+1]):
                         df['growth_index'] = df['growth_index'].replace(index, start_index_list[i])
 
-        plot = sns.lineplot(data=df[df['metric']==metric], 
-                            x='time_step', y='a.u.', hue=sort_by)
+        if isinstance(ranges, tuple):
+            df = df[df['time_step']<ranges[1]]
+            df = df[df['time_step']>ranges[0]]
+
+        plt.figure(figsize=(6,3))
+        plot = sns.lineplot(data=df[df['metric']==metric], x='time_step', y='a.u.', hue=sort_by, legend='full')
+
+        plt.ylabel(metric+' (a.u.)')
+
+        if custom_labels:
+            # plt.legend(labels=custom_titles)
+            for t, l in zip(plot.legend_.texts, custom_labels):
+                t.set_text(l)
+            # plt.legend(custom_titles)
+
+        if legend_title == None:
+            plot.legend_.set_title(None)
+
         plt.show()
     return df
 
@@ -216,6 +234,7 @@ def plot_metrics_heatmap(df, frame_range):
     :type frame_range: tuple(int, int)
     
     '''
+    plt.set_cmap('viridis')
     
     for m in df.metric.unique():
         df_hm = df.loc[df['metric']==m]

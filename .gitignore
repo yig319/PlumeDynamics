@@ -1,3 +1,6 @@
+# datasets
+datasets/
+
 # Training history
 notebooks/wandb/
 
