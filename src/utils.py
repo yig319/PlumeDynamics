@@ -2,6 +2,11 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+def NormalizeData(data):
+    return (data - np.min(data)) / (np.max(data) - np.min(data))
+
+
 def show_images(images, labels=None, img_per_row=8, colorbar=False):
 
     '''
@@ -31,7 +36,7 @@ def show_images(images, labels=None, img_per_row=8, colorbar=False):
             im = axes[i%img_per_row].imshow(images[i])
             if colorbar:
                 fig.colorbar(im, ax=axes[i%img_per_row])
-            axes[i//img_per_row, i%img_per_row].axis('off')
+            axes[i%img_per_row].axis('off')
 
         else:
             axes[i//img_per_row, i%img_per_row].title.set_text(labels[i])
@@ -59,6 +64,37 @@ def show_h5_dataset_name(ds_path, class_name=None):
         else:
             print(hf.keys())
             
+
+def load_plumes(ds_path, class_name, ds_name, process_func=None):
+
+    '''
+    This is a utility function used to load plume images from hdf5 file 
+    based on the the ds_name after preprocess with process_func.
+
+    :param ds_path: path to hdf5 file
+    :type ds_path: str
+
+    :param class_name: class name of hdf5 file
+    :type class_name: str(, optional)
+
+    :param ds_name: dataset name for plume images in hdf5 file
+    :type ds_name: str
+
+    :param process_func: preprocess function
+    :type process_func: function(, optional)
+
+    '''
+
+    with h5py.File(ds_path) as hf:
+        plumes = np.array(hf[class_name][ds_name])
+
+    if process_func:
+        plumes = process_func(plumes)
+
+    return plumes
+
+
+
 def load_h5_examples(ds_path, class_name, ds_name, process_func=None, show=True):
 
     '''
@@ -84,8 +120,8 @@ def load_h5_examples(ds_path, class_name, ds_name, process_func=None, show=True)
 
     with h5py.File(ds_path) as hf:
         plumes = np.array(hf[class_name][ds_name])
-    if show:
-        if process_func:
-            images = process_func(plumes)
-        show_images(images, colorbar=True)
+
+    if process_func:
+        images = process_func(plumes)
+
     return plumes
