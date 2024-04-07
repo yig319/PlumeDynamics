@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import patheffects
 # import torch
-from NormalizeData import NormalizeData
+from utils import NormalizeData
 
 def create_axes_grid(n_plots, n_per_row, plot_height, n_rows=None, figsize='auto'):
     """
@@ -110,8 +110,10 @@ def show_images(images, labels=None, img_per_row=8, img_height=1, label_size=12,
             m, s = np.mean(img), np.std(img) 
             if type(clim) == list:
                 im.set_clim(m-clim[i]*s, m+clim[i]*s) 
-            else:
+            elif type(clim) == int:
                 im.set_clim(m-clim*s, m+clim*s) 
+            # else:
+            #     im.set_clim(0, 1)
 
             fig.colorbar(im, ax=axes[index])
             
