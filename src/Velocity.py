@@ -1,6 +1,11 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
+from tqdm import tqdm
+from skimage import measure
+from skimage.measure import regionprops, regionprops_table
+
 from Viz import create_axes_grid
 
 class VelocityCalculator:
@@ -28,7 +33,18 @@ class VelocityCalculator:
         self.start_position = start_position
         self.threshold = threshold
     
-    def velocity_one_func(self, plumes):
+    def to_df(self, plume_positions, plume_distances, plume_velocities):
+        num_plumes, num_times = plume_positions.shape[:2]
+        plume_indices = np.repeat(np.arange(num_plumes), num_times)
+        time_indices = np.tile(np.arange(num_times), num_plumes)
+        multi_index = pd.MultiIndex.from_arrays([plume_indices, time_indices], names=['plume_index', 'time_index'])
+
+        df = pd.DataFrame({'Distance': plume_distances.flatten(),
+                           'Velocity': plume_velocities.flatten()
+                           }, index=multi_index)
+        return df
+
+    def calculate_distance_area_for_plumes(self, plumes, return_format='numpy'):
         '''
         This is a function used to calculate the velocity of the plume based on its positions in consecutive frames.
 
@@ -36,28 +52,75 @@ class VelocityCalculator:
         :type plumes: numpy.ndarray
         '''
 
-        plume_positions = []
-        for plume in plumes:
-            front_edges = self.get_plume_potision(plume)
-            plume_positions.append(front_edges)
-        plume_positions = np.array(plume_positions)
-
         # Calculate the velocities and distances for each video
-        plume_velocities_distances = [self.calculate_velocity_and_distance(positions) for positions in plume_positions]
+        results = [self.calculate_velocity_and_distance_for_plume(plume) for plume in tqdm(plumes)]
 
         # Separate the velocities and distances into two lists
-        plume_velocities = [result[0] for result in plume_velocities_distances]
-        plume_distances = [result[1] for result in plume_velocities_distances]
+        plume_positions = np.array([result[0] for result in results])
+        plume_distances = np.array([result[1] for result in results])
+        plume_velocities = np.array([result[2] for result in results])
 
+        plume_positions = np.array(plume_positions)
         plume_velocities = np.array(plume_velocities)
         plume_distances = np.array(plume_distances)
-        time = np.arange(0, plume_distances.shape[1]) * self.time_interval
-        time = np.repeat(time, plume_distances.shape[0]).reshape(plume_distances.shape)
 
-        return time, plume_positions, plume_distances, plume_velocities
+        return plume_positions, plume_distances, plume_velocities
+        
 
 
-    def visualize_plume_positions(self, plume, plume_position, label_time=False, title=None):
+    def calculate_velocity_and_distance_for_plume(self, plume):
+        """
+        Calculates the velocity of the plume based on its positions in consecutive frames.
+        we only consider the front end (x axis) of the plume since we already normalize the image
+
+        Args:
+            plume_positions (list): A list of tuples (x, y) representing the centroid positions of the plume.
+            
+        Returns:
+            list: A list of velocities in pixels per unit time.
+        """
+        positions = []
+        velocities = []
+        distances = []
+        for frame in plume:
+            x, y = self.get_plume_position(frame, self.threshold)
+            positions.append((x, y))
+
+            # set the start position
+            if distances == []:
+                if isinstance(self.start_position, type(None)):
+                    self.start_position = x
+                if isinstance(self.start_position, tuple):
+                    self.start_position = self.start_position[0]
+
+            if distances != []: # not calculate the backward
+                # print(len(positions), x, distances[-1])
+                if x - self.start_position < distances[-1]:
+                    x = distances[-1] + self.start_position
+
+                # print(len(positions), (x,y), self.start_position, x, distances[-1])
+            distances.append(x - self.start_position)
+
+        velocities = [(distances[i]-distances[i-1]) / self.time_interval for i in range(1, len(distances))]
+        velocities = [0] + velocities # add the first velocity as 0
+        return np.array(positions), np.array(distances), np.array(velocities)
+    
+
+    def get_plume_position(self, frame, threshold):
+
+        _, frame_binary = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
+
+        # calculate the front end of the plume
+        label_img = measure.label(frame_binary)
+        regions = regionprops(label_img)
+        sorted_regions = sorted(regions, key=lambda x: x.area, reverse=True)
+        if len(sorted_regions) == 0:
+            return 0, 0
+        minr, minc, maxr, maxc = sorted_regions[0].bbox 
+        return maxc, np.mean((minr, maxr))
+            
+
+    def visualize_plume_positions(self, plume, plume_position, frame_range=None, label_time=False, title=None):
         '''
         This is a function used to visualize the plume positions, distances, and velocities.
 
@@ -70,6 +133,10 @@ class VelocityCalculator:
         :param frame_range: frame range
         :type frame_range: tuple
         '''
+        if not isinstance(frame_range, type(None)):
+            plume = plume[frame_range[0]:frame_range[1]]
+            plume_position = plume_position[frame_range[0]:frame_range[1]]
+
         if label_time:
             time = np.arange(0, plume_position.shape[0]) * self.time_interval
             titles = [f'{t:.2e}s' for t in time]
@@ -91,7 +158,7 @@ class VelocityCalculator:
         plt.show()
 
             
-    def visualize_distance_velocity(self, plume_distance, plume_velocity, index_time=False):
+    def visualize_distance_velocity(self, plume_distance, plume_velocity, frame_range=None, index_time=False, ignore_start=0):
         '''
         This is a function used to visualize the plume positions, distances, and velocities.
 
@@ -104,6 +171,14 @@ class VelocityCalculator:
         :param frame_range: frame range
         :type frame_range: tuple
         '''
+        if not isinstance(frame_range, type(None)):
+            plume_distance = plume_distance[frame_range[0]:frame_range[1]]
+            plume_velocity = plume_velocity[frame_range[0]:frame_range[1]]
+
+        if ignore_start:
+            plume_distance[:ignore_start] = plume_distance[0]
+            plume_velocity[:ignore_start] = plume_velocity[0]
+
         if index_time:
             time = np.arange(0, plume_distance.shape[0]) * self.time_interval
             indexes = [f'{t:.2e}s' for t in time]
@@ -119,123 +194,3 @@ class VelocityCalculator:
         axes[1].set_title('Velocity')
         axes[1].grid()
         plt.show()
-
-
-    def calculate_velocity_and_distance(self, plume_positions):
-        """
-        Calculates the velocity of the plume based on its positions in consecutive frames.
-        
-        Args:
-            plume_positions (list): A list of tuples (x, y) representing the centroid positions of the plume.
-            
-        Returns:
-            list: A list of velocities in pixels per unit time.
-        """
-        velocities = []
-        distances = []
-        for i in range(1, len(plume_positions)):
-            dx = plume_positions[i][0] - plume_positions[i - 1][0]
-            dy = plume_positions[i][1] - plume_positions[i - 1][1]
-            distance = np.sqrt(dx**2 + dy**2)
-            velocity = distance / self.time_interval
-            velocities.append(velocity)
-
-            # Calculate the distance from the start position
-            dx_start = plume_positions[i][0] - self.start_position[0]
-            dy_start = plume_positions[i][1] - self.start_position[1]
-            distance_from_start = np.sqrt(dx_start**2 + dy_start**2)
-            distances.append(distance_from_start)
-
-        return velocities, distances 
-    
-
-    def get_plume_front_edge(self, frame):
-        """
-        Extracts the rightmost edge of the plume from a single frame, considering optional start and end position limits.
-
-        Args:
-            frame (numpy.ndarray): The input frame.
-        Returns:
-            tuple: The coordinates (x, y) of the plume's front edge.
-        """
-        # Convert the frame to grayscale
-        if len(frame.shape) == 3:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        else:
-            gray = frame
-
-        # Apply thresholding to get the binary mask of the plume
-        _, mask = cv2.threshold(gray, self.threshold, 255, cv2.THRESH_BINARY)
-
-        # Apply the start and end limits if provided
-        if self.position_range is not None:
-            mask[:, :self.position_range[0]] = 0
-            mask[:, self.position_range[1]:] = 0
-        
-        # Find contours in the mask
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        if contours:
-            # Assume the largest contour is the plume
-            plume_contour = max(contours, key=cv2.contourArea)
-            # Find the rightmost point of the plume contour
-            rightmost = tuple(plume_contour[plume_contour[:, :, 0].argmax()][0])
-            return rightmost
-        else:
-            # Return the start position if there's no plume
-            return self.start_position
-        
-
-    def get_plume_potision(self, plume):
-        '''
-        calculate the plume position in each frame
-
-        :param plume: plume images
-        :type plume: list
-        '''
-        plume_positions = [self.get_plume_front_edge(frame) for frame in plume]
-        # Maintain the last known position when the plume diminishes
-        for i in range(1, len(plume_positions)):
-            if plume_positions[i] == self.start_position:
-                plume_positions[i] = plume_positions[i - 1]
-        plume_positions = np.array(plume_positions)
-        return plume_positions
-
-
-    def get_plume_centroid(self, frame):
-        """
-        Extracts the centroid of the plume from a single frame, considering optional start and end position limits.
-
-        Args:
-            frame (numpy.ndarray): The input frame.
-
-        Returns:
-            tuple: The centroid (x, y) of the plume, or (0, 0) if not found.
-        """
-        # Convert the frame to grayscale
-        if len(frame.shape) == 3:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        else:
-            gray = frame
-            
-        # Apply thresholding to get the binary mask of the plume
-        _, mask = cv2.threshold(gray, self.threshold, 255, cv2.THRESH_BINARY)
-
-        # Apply the start and end limits if provided
-        if not isinstance(self.position_range, type(None)):
-            mask[:, :self.position_range[0]] = 0
-            mask[:, self.position_range[1]:] = 0
-        
-        # Find contours in the mask
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        if contours:
-            # Assume the largest contour is the plume
-            plume_contour = max(contours, key=cv2.contourArea)
-            # Compute the centroid of the plume
-            M = cv2.moments(plume_contour)
-            if M['m00'] != 0:
-                cx = int(M['m10'] / M['m00'])
-                cy = int(M['m01'] / M['m00'])
-                return (cx, cy)
-        return self.start_position
