@@ -107,8 +107,9 @@ class VelocityCalculator:
     
 
     def get_plume_position(self, frame, threshold):
-
+        # print(frame.shape)
         _, frame_binary = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
+        # frame_binary = np.copy(frame)
 
         # calculate the front end of the plume
         label_img = measure.label(frame_binary)
@@ -117,6 +118,11 @@ class VelocityCalculator:
         if len(sorted_regions) == 0:
             return 0, 0
         minr, minc, maxr, maxc = sorted_regions[0].bbox 
+        if maxc < self.position_range[0]:
+            maxc = self.position_range[0]
+        if maxc > self.position_range[1]:
+            maxc = self.position_range[1]
+
         return maxc, np.mean((minr, maxr))
             
 
@@ -144,8 +150,10 @@ class VelocityCalculator:
             titles = np.arange(0, plume_position.shape[0])
 
         fig, axes = create_axes_grid(len(plume), n_per_row=8, plot_height=1.1)
+        axes = axes.flatten()
         # fig, axes = plt.subplots(5, 8, figsize=(16, 10))
-        for i, ax in enumerate(axes.flatten()):
+        for i in range(len(plume)):
+            ax = axes[i]
             x, y = plume_position[i]
             im = ax.imshow(plume[i])
             ax.plot(x, y, 'r|', markersize=15)

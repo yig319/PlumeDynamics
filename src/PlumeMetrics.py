@@ -93,7 +93,7 @@ class PlumeMetrics:
 
         fig, axes = create_axes_grid(len(plume), n_per_row=8, plot_height=1.1)
         axes = axes.flatten()
-        for i in range(len(axes)):
+        for i in range(len(plume)):
             axes[i].imshow(labeled_images[i], cmap='viridis')
             if np.sum(coords[i]) != 0:
                 axes[i].text(coords[i][0], coords[i][1], f'Area:{areas[i]}', color='white', fontsize=8, ha='center', va='center')

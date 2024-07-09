@@ -1,0 +1,21 @@
+{
+    "header": {
+        "Growth ID": "YG054",
+        "User Name": "YichenGuo",
+        "Date": "06/25/2024",
+        "time": "14:36:30",
+        "Path": "C:\\Image",
+        "Chamber": "Laser 1A",
+        "Cool Down Atmosphere": "Vacuum",
+        "Notes": "Fluence is 1.6J/cm^2."
+    },
+    "target_1": {
+        "Target Material": "SrTiO3",
+        "Laser Energy(mJ)": "1.6J/cm^2",
+        "Ablation-Temperature(\u00b0C)": 800.0,
+        "Ablation-Pressure(mTorr)": 75.0,
+        "Ablation-Atmosphere Gas": "Oxygen",
+        "Ablation-Frequency(Hz)": 5.0,
+        "Ablation-Pulses": 7000.0
+    }
+}

@@ -3,8 +3,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
-sys.path.append('../../helper_functions/')
-from visualization_functions import layout_fig
+sys.path.append('../../src/')
+from Viz import create_axes_grid
 
 class Resistivity_temperature():
     def __init__(self, file, printing):
@@ -57,9 +57,11 @@ class hall_measurement():
             print('carrier density: n ='+format(self.n,'.2e')+'/ cm^3')
         return self.n
     
-    def plot_carrier_density(self, R_H_list, n_list, B_list, R_list, R_fit_list, a_list, b_list, labels, figsize, plot_fitted=True):
+    def plot_carrier_density(self, R_H_list, n_list, B_list, R_list, R_fit_list, a_list, b_list, labels, figsize='auto', plot_fitted=True):
+        
+        fig, axes = create_axes_grid(len(B_list), n_per_row=3, plot_height=5, figsize=figsize)
 
-        fig, axes = layout_fig(len(B_list), mod=3, layout='tight', figsize=figsize)
+        # fig, axes = layout_fig(len(B_list), mod=3, layout='tight', figsize=figsize)
         # fig, axes = plt.subplots(len(B_list)//4+1, len(B_list)%, figsize=(16, len(B_list)//4+1))
 
         for i, (R_H, n, B, R, R_fit, a, b, l) in enumerate(zip(R_H_list, n_list, B_list, R_list, R_fit_list, a_list, b_list, labels)):

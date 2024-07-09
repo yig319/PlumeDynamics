@@ -45,7 +45,7 @@ def trim_axes(axs, N):
 
 
 def show_images(images, labels=None, img_per_row=8, img_height=1, label_size=12, title=None, show_colorbar=False, 
-                clim=3, cmap='viridis', scale_range=False, hist_bins=None, show_axis=False, axes=None, save_path=None):
+                clim='auto', cmap='viridis', scale_range=False, hist_bins=None, show_axis=False, axes=None, save_path=None):
     
     '''
     Plots multiple images in grid.
@@ -106,15 +106,16 @@ def show_images(images, labels=None, img_per_row=8, img_height=1, label_size=12,
         axes[index].set_title(labels[i], fontsize=label_size)
         im = axes[index].imshow(img, cmap=cmap)
 
-        if show_colorbar:
+        if clim != 'auto':
             m, s = np.mean(img), np.std(img) 
             if type(clim) == list:
                 im.set_clim(m-clim[i]*s, m+clim[i]*s) 
             elif type(clim) == int:
                 im.set_clim(m-clim*s, m+clim*s) 
-            # else:
-            #     im.set_clim(0, 1)
+            elif type(clim) == tuple:
+                im.set_clim(*clim)
 
+        if show_colorbar:
             fig.colorbar(im, ax=axes[index])
             
         if show_axis:
@@ -129,9 +130,10 @@ def show_images(images, labels=None, img_per_row=8, img_height=1, label_size=12,
             h = axes[index_hist].hist(img.flatten(), bins=hist_bins)
 
         if title:
-            fig.suptitle(title, fontsize=12)
-    plt.tight_layout()
-
+            fig.suptitle(title, fontsize=15)
+            plt.tight_layout(pad=0.5)
+        else:
+            plt.tight_layout()
     # if save_path and isinstance(axes, type(None)): # this is not effective because axes are defined after the function is called
     #     plt.savefig(save_path+'.svg', dpi=300)
     #     plt.savefig(save_path+'.png', dpi=300)

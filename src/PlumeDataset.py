@@ -17,10 +17,10 @@ class plume_dataset():
         '''
         self.file_path = file_path
         self.group_name = group_name
-
-    def show_dataset_name(self):
+    
+    def dataset_names(self):
         '''
-        This is a utility function used to show the dataset names in a hdf5 file.
+        This is a utility function used to get the dataset names in a hdf5 file.
 
         :param ds_path: path to hdf5 file
         :type ds_path: str
@@ -28,9 +28,9 @@ class plume_dataset():
         :param class_name: class name of hdf5 file
         :type class_name: str(, optional)
         '''
-
         with h5py.File(self.file_path) as hf:
-            print(hf[self.group_name].keys())            
+            datasets = list(hf[self.group_name].keys())
+        return datasets
                 
 
     def load_plumes(self, dataset_name):
