@@ -4,26 +4,51 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-from Viz import create_axes_grid
+from viz import create_axes_grid
+from HorizontalLineProfileAnalyzer import HorizontalLineProfileAnalyzer
 
 class PlumeMetrics:
 
-    def __init__(self, time_interval, threshold=100):
+    def __init__(self, time_interval, start_position, position_range, threshold=200):
         '''
         This is a class used to calculate the velocity of the plume based on its positions in consecutive frames.
 
         :param time_interval: time interval
         :type time_interval: int
 
-        :param threshold: threshold
-        :type threshold: int
+        :param position_range: position range for x axis/horizontal axis
+        :type position_range: tuple
 
+        :param start_position: start position
+        :type start_position: tuple
         '''
         self.time_interval = time_interval
+        self.start_position = start_position
+        self.position_range = position_range
         self.threshold = threshold
 
+    def calculate_area(self, frame, viz=False):
 
-    def calculate_area(self, frame, threshold, viz=False):
+        # determine the threshold based on the line profile along the horizontal axis
+        y = self.start_position[1]
+        x_start = self.position_range[0]
+
+        # method 1: use the threshold provided by the user
+        if self.threshold == 'flexible':
+            # method 2: use the horizontal line profile to detect the threshold
+            analyzer = HorizontalLineProfileAnalyzer(frame, row=y, line_width=5)
+            profile = analyzer.extract_profile()
+            position, threshold = analyzer.detect(target_x=x_start, show_image=False, show_profile=False, show_difference=False)
+            if threshold == None:
+                threshold = 200 # use the default threshold(200)
+
+        elif isinstance(self.threshold, int):
+            threshold = self.threshold
+
+        else:
+            raise ValueError('Please provide the threshold value or use the flexible method to detect the threshold.')
+
+
         _, frame_binary = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
 
         # calculate the area
@@ -50,22 +75,23 @@ class PlumeMetrics:
         return area, coord, labeled_image
 
 
-    def calculate_area_for_plume(self, plume, threshold=100):
+    def calculate_area_for_plume(self, plume):
         areas = np.zeros(plume.shape[0])
         coords = np.zeros((plume.shape[0],2), dtype=np.uint8)
         labeled_images = np.zeros(plume.shape)
+
         for j in range(plume.shape[0]):
-            areas[j], coords[j], labeled_images[j] = self.calculate_area(plume[j], threshold)
+            areas[j], coords[j], labeled_images[j] = self.calculate_area(plume[j])
         return areas, coords, labeled_images
 
 
-    def calculate_area_for_plumes(self, plumes, threshold=100, return_format='numpy'):
+    def calculate_area_for_plumes(self, plumes, return_format='numpy'):
         areas = np.zeros(plumes.shape[:2])
         coords = np.zeros((*plumes.shape[:2],2))
         labeled_images = np.zeros(plumes.shape)
 
         for i in tqdm(range(plumes.shape[0])):
-            areas[i], coords[i], labeled_images[i] = self.calculate_area_for_plume(plumes[i], threshold)
+            areas[i], coords[i], labeled_images[i] = self.calculate_area_for_plume(plumes[i])
         return areas, coords, labeled_images
     
     def to_df(self, areas):

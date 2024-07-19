@@ -2,6 +2,33 @@ import h5py
 import numpy as np
 import matplotlib.pyplot as plt
 
+def check_fragmentation(filename):
+    '''
+    check the fragmentation of the hdf5 file after renaming group and dataset
+    '''
+
+    with h5py.File(filename, 'r') as f:
+        total_size = 0
+        allocated_size = 0
+        for obj in f['PLD_Plumes'].values():
+            if isinstance(obj, h5py.Dataset):
+                total_size += obj.size * obj.dtype.itemsize
+                allocated_size += obj.id.get_storage_size()
+    
+    fragmentation = (allocated_size - total_size) / allocated_size * 100
+    return fragmentation
+
+# example of renaming group and dataset
+# import h5py
+# # Open the file
+#     with h5py.File(file, 'r+') as f:
+#         print(f['PLD_Plumes'].keys())
+#         # Rename the dataset
+#         f['PLD_Plumes'].move('1-SrTiO3_Pre', '1-SrRuO3_Pre')
+#         check_fragmentation(file)
+
+
+
 def smooth_curve(data, window_size):
     """
     Smooths a 1D curve using a moving average, retaining the same shape as the original data.

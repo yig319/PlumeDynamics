@@ -22,6 +22,7 @@ class HorizontalLineProfileAnalyzer:
         
         start_row = max(0, self.row - self.line_width // 2)
         end_row = min(self.height, start_row + self.line_width)
+        # print( start_row, end_row)
         
         self.profile = np.mean(self.image[start_row:end_row, :], axis=0)
         return self.profile
@@ -59,10 +60,8 @@ class HorizontalLineProfileAnalyzer:
             ax1.plot(differences, 'b')
 
         peaks, properties = find_peaks(-differences, prominence=prominence, width=width, distance=distance)
+
         # print(peaks, properties)
-        if len(peaks) == 0:
-            plt.show()
-            return None
         
         peak_heights = properties['prominences']
         if target_x is not None:
@@ -70,15 +69,19 @@ class HorizontalLineProfileAnalyzer:
             peaks = peaks[peaks>target_x+10]
         # print(peaks, properties)
 
+        if len(peaks) == 0:
+            plt.show()
+            return None
+        
         largest_decrease_index = np.argmax(peak_heights)
         largest_decrease_position = peaks[largest_decrease_index]
         
         if show_profile:
-            ax0.plot(largest_decrease_position, self.profile[largest_decrease_position], 'ro', markersize=5)
+            ax0.plot(largest_decrease_position, differences[largest_decrease_position], 'ro', markersize=5)
             ax1.plot(largest_decrease_position, differences[largest_decrease_position], 'ro', markersize=5)
             plt.show()
 
-        return largest_decrease_position + 1, differences[largest_decrease_position], diff_original, differences
+        return largest_decrease_position + 1, self.profile[largest_decrease_position], diff_original, differences
 
     def detect(self, target_x=None, show_image=True, show_profile=True, show_difference=True):
         if self.profile is None:

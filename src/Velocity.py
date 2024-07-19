@@ -6,11 +6,12 @@ from tqdm import tqdm
 from skimage import measure
 from skimage.measure import regionprops, regionprops_table
 
-from Viz import create_axes_grid
+from viz import create_axes_grid
+from HorizontalLineProfileAnalyzer import HorizontalLineProfileAnalyzer
 
 class VelocityCalculator:
 
-    def __init__(self, time_interval, position_range, start_position, threshold=100):
+    def __init__(self, time_interval, start_position, position_range, threshold=200):
         '''
         This is a class used to calculate the velocity of the plume based on its positions in consecutive frames.
 
@@ -65,7 +66,6 @@ class VelocityCalculator:
         plume_distances = np.array(plume_distances)
 
         return plume_positions, plume_distances, plume_velocities
-        
 
 
     def calculate_velocity_and_distance_for_plume(self, plume):
@@ -82,24 +82,25 @@ class VelocityCalculator:
         positions = []
         velocities = []
         distances = []
+
+        previous_x = 0
+        # set the start position
+        if isinstance(self.start_position, tuple):
+            previous_x = self.start_position[0]
+
         for frame in plume:
             x, y = self.get_plume_position(frame, self.threshold)
             positions.append((x, y))
 
-            # set the start position
-            if distances == []:
-                if isinstance(self.start_position, type(None)):
-                    self.start_position = x
-                if isinstance(self.start_position, tuple):
-                    self.start_position = self.start_position[0]
-
             if distances != []: # not calculate the backward
                 # print(len(positions), x, distances[-1])
-                if x - self.start_position < distances[-1]:
-                    x = distances[-1] + self.start_position
+                if x - previous_x < distances[-1]:
+                    x = distances[-1] + previous_x
 
                 # print(len(positions), (x,y), self.start_position, x, distances[-1])
-            distances.append(x - self.start_position)
+
+            # print(x, previous_x)
+            distances.append(x - previous_x)
 
         velocities = [(distances[i]-distances[i-1]) / self.time_interval for i in range(1, len(distances))]
         velocities = [0] + velocities # add the first velocity as 0
@@ -107,24 +108,42 @@ class VelocityCalculator:
     
 
     def get_plume_position(self, frame, threshold):
-        # print(frame.shape)
-        _, frame_binary = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
-        # frame_binary = np.copy(frame)
+        y = self.start_position[1]
+        x_start = self.position_range[0]
+        # print(x_start, y)
 
-        # calculate the front end of the plume
-        label_img = measure.label(frame_binary)
-        regions = regionprops(label_img)
-        sorted_regions = sorted(regions, key=lambda x: x.area, reverse=True)
-        if len(sorted_regions) == 0:
-            return 0, 0
-        minr, minc, maxr, maxc = sorted_regions[0].bbox 
-        if maxc < self.position_range[0]:
-            maxc = self.position_range[0]
-        if maxc > self.position_range[1]:
-            maxc = self.position_range[1]
+        if threshold == 'flexible': # use the threshold detected by the line profile
 
-        return maxc, np.mean((minr, maxr))
-            
+            analyzer = HorizontalLineProfileAnalyzer(frame, row=y, line_width=5)
+            profile = analyzer.extract_profile()
+            position, magnitude = analyzer.detect(target_x=x_start, show_image=False, show_profile=False, show_difference=False)
+            if position == None:
+                position = x_start
+            # print(position, magnitude)
+            return position, y
+        
+        elif isinstance(threshold, int): # use the threshold provided by the user
+            # print(frame.shape)
+            _, frame_binary = cv2.threshold(frame, threshold, 255, cv2.THRESH_BINARY)
+            # frame_binary = np.copy(frame)
+
+            # calculate the front end of the plume
+            label_img = measure.label(frame_binary)
+            regions = regionprops(label_img)
+            sorted_regions = sorted(regions, key=lambda x: x.area, reverse=True)
+            if len(sorted_regions) == 0:
+                return 0, 0
+            minr, minc, maxr, maxc = sorted_regions[0].bbox 
+            if maxc < self.position_range[0]:
+                maxc = self.position_range[0]
+            if maxc > self.position_range[1]:
+                maxc = self.position_range[1]
+
+            return maxc, np.mean((minr, maxr))
+        
+        else:
+            raise ValueError('The threshold should be either an integer or "flexible"')
+                
 
     def visualize_plume_positions(self, plume, plume_position, frame_range=None, label_time=False, title=None):
         '''
