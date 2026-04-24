@@ -1,0 +1,20 @@
+include README.rst
+include README.md
+include CHANGELOG.rst
+include LICENSE.txt
+include requirements.txt
+include requirements-dev.txt
+include pyproject.toml
+include setup.cfg
+include setup.py
+
+graft src/plume_dynamics
+graft tests
+
+prune notebooks
+prune src/DL
+prune src/__pycache__
+prune src/PlumeDynamics.egg-info
+
+exclude src/*.py
+global-exclude *.py[cod] __pycache__ .ipynb_checkpoints

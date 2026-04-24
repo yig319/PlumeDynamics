@@ -60,7 +60,6 @@ dependencies:
     - comm==0.2.2
     - contourpy==1.2.0
     - cycler==0.12.1
-    - datafed==3.0.0
     - docker-pycreds==0.4.0
     - et-xmlfile==1.1.0
     - fastjsonschema==2.19.1
