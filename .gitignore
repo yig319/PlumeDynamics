@@ -3,10 +3,6 @@ datasets/
 notebooks/
 .ipynb
 
-# Training history
-notebooks/wandb/
-
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
