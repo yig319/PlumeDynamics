@@ -1,5 +1,7 @@
 # datasets
 datasets/
+notebooks/
+.ipynb
 
 # Training history
 notebooks/wandb/

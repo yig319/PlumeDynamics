@@ -2,9 +2,8 @@
 
 import numpy as np
 import h5py
-import sys
-sys.path.append('../../../src')
-from plume_dynamics.datasets import plume_dataset
+
+from plume_dynamics.analysis.datasets import plume_dataset
 
 class EqualRangeNormalizer:
     def __init__(self):

@@ -4,9 +4,8 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
-sys.path.append('../../src/')
-from .visualization import create_axes_grid
+
+from ..viz.images import create_axes_grid
 
 class Resistivity_temperature():
     def __init__(self, file, printing):

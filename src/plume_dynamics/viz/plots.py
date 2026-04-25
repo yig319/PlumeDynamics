@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-from .utils import NormalizeData, layout_fig
+from ..utils import NormalizeData, layout_fig
 
 def set_cbar(fig, ax, cbar_label=None, scientific_notation=True, logscale=False, tick_in=True, ticklabel_fontsize=10, labelpad=4, fontsize=10):
     cbar = fig.colorbar(ax.collections[0], ax=ax, orientation='vertical', pad=0.02, shrink=1)

@@ -12,9 +12,6 @@ graft src/plume_dynamics
 graft tests
 
 prune notebooks
-prune src/DL
-prune src/__pycache__
 prune src/PlumeDynamics.egg-info
 
-exclude src/*.py
 global-exclude *.py[cod] __pycache__ .ipynb_checkpoints

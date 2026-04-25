@@ -6,8 +6,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+
+from ..viz.images import create_axes_grid
 from .profiles import HorizontalLineProfileAnalyzer
-from .visualization import create_axes_grid
 
 class PlumeMetrics:
     """Calculate area and centroid metrics for one or more plume videos.
@@ -44,14 +45,38 @@ class PlumeMetrics:
         self.threshold = threshold
         self.progress_bar = progress_bar
 
-    def calculate_area(self, frame, viz=False):
+    def calculate_area(self, frame, threshold=None, viz=False):
+        """Measure the dominant bright plume area in a single frame.
+
+        Parameters
+        ----------
+        frame : numpy.ndarray
+            One 2D plume image.
+        threshold : int or {"flexible"}, optional
+            Temporary threshold override for this one frame. When omitted, the
+            instance-level ``self.threshold`` value is used. This parameter is
+            mainly kept for backward compatibility with older notebooks that
+            called ``calculate_area(frame, threshold)`` directly.
+        viz : bool, default=False
+            When ``True``, show intermediate connected-component labeling for
+            debugging threshold selection.
+
+        Returns
+        -------
+        tuple
+            ``(area, centroid, labeled_image)`` where ``area`` is the dominant
+            connected-component area in pixels, ``centroid`` is an ``(x, y)``
+            integer coordinate, and ``labeled_image`` is the full labeled mask.
+        """
 
         # determine the threshold based on the line profile along the horizontal axis
         y = self.start_position[1]
         x_start = self.position_range[0]
 
         # method 1: use the threshold provided by the user
-        if self.threshold == 'flexible':
+        active_threshold = self.threshold if threshold is None else threshold
+
+        if active_threshold == 'flexible':
             # method 2: use the horizontal line profile to detect the threshold
             analyzer = HorizontalLineProfileAnalyzer(frame, row=y, line_width=5)
             profile = analyzer.extract_profile()
@@ -59,8 +84,8 @@ class PlumeMetrics:
             if threshold == None:
                 threshold = 200 # use the default threshold(200)
 
-        elif isinstance(self.threshold, int):
-            threshold = self.threshold
+        elif isinstance(active_threshold, int):
+            threshold = active_threshold
 
         else:
             raise ValueError('Please provide the threshold value or use the flexible method to detect the threshold.')
@@ -93,6 +118,7 @@ class PlumeMetrics:
 
 
     def calculate_area_for_plume(self, plume):
+        """Compute frame-by-frame area measurements for one plume video."""
         areas = np.zeros(plume.shape[0])
         coords = np.zeros((plume.shape[0],2), dtype=np.uint8)
         labeled_images = np.zeros(plume.shape)
@@ -103,6 +129,7 @@ class PlumeMetrics:
 
 
     def calculate_area_for_plumes(self, plumes, return_format='numpy'):
+        """Compute area measurements for an entire plume collection."""
         areas = np.zeros(plumes.shape[:2])
         coords = np.zeros((*plumes.shape[:2],2))
         labeled_images = np.zeros(plumes.shape)
@@ -115,6 +142,7 @@ class PlumeMetrics:
         return areas, coords, labeled_images
     
     def to_df(self, areas):
+        """Convert an ``(n_plumes, n_frames)`` area array into a tidy dataframe."""
         num_plumes, num_times = areas.shape[:2]
         plume_indices = np.repeat(np.arange(num_plumes), num_times)
         time_indices = np.tile(np.arange(num_times), num_plumes)
@@ -126,6 +154,7 @@ class PlumeMetrics:
         
 
     def viz_area(self, df, x_range):
+        """Plot one dataframe of area measurements against time index."""
         if not isinstance(df, pd.DataFrame):
             raise ValueError('Input should be a pandas DataFrame.')
 
@@ -136,6 +165,7 @@ class PlumeMetrics:
 
 
     def viz_blob_plume(self, plume, areas, coords, labeled_images, title=None):
+        """Visualize connected-component labels for one selected plume video."""
 
         fig, axes = create_axes_grid(len(plume), n_per_row=8, plot_height=1.1)
         axes = axes.flatten()
@@ -152,6 +182,7 @@ class PlumeMetrics:
 
 
     def label_blob(self, image, image_binary, labels, stats, centroids, sorted_indices, background_index, n_show=5):
+        """Show the top connected components identified in one thresholded frame."""
 
         # Create a color map for visualization
         colors = plt.cm.jet(np.linspace(0, 1, n_show + 1))

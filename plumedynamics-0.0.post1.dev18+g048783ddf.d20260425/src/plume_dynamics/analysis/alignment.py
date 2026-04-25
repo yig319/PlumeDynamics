@@ -1,3 +1,5 @@
+"""Perspective alignment helpers for registered plume image stacks."""
+
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -26,11 +28,15 @@ def visualize_corners(image: np.ndarray, coordinates: np.ndarray, color='k', mar
 
 
 def transform_image(image, frame_view, frame_view_ref):
+    """Warp one image from measured corner coordinates into a reference frame."""
+
     transformation_matrix = cv2.getPerspectiveTransform(frame_view.astype(np.float32), frame_view_ref.astype(np.float32))
     transformed_image = cv2.warpPerspective(image, transformation_matrix, (image.shape[1], image.shape[0]))
     return transformed_image
 
 def align_plumes(plumes, frame_view, frame_view_ref):
+    """Apply the same perspective correction to every frame in a plume stack."""
+
     align_plumes = np.zeros(plumes.shape, dtype=plumes.dtype)
     n_plume, n_frame, h, w = plumes.shape
     for n1 in range(n_plume):

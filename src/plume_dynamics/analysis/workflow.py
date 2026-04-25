@@ -3,11 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from ..utils import layout_fig
 from .alignment import align_plumes, visualize_corners
 from .datasets import plume_dataset
 from .metrics import PlumeMetrics
 from .velocity import VelocityCalculator
-from .utils import layout_fig
 
 def load_plumes_and_align(file_path, group_name='PLD_Plumes', plume_name='1-SrRuO3', pre_plume_name=None, frame_view_index=0, plume_view_index=0):
     """

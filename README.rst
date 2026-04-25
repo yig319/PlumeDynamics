@@ -33,7 +33,7 @@ Quick Start
 .. code-block:: python
 
    import numpy as np
-   from plume_dynamics.plume_io import extract_frame_metrics, plot_sample_frames
+   from plume_dynamics.io import extract_frame_metrics, plot_sample_frames
 
    frames = np.random.random((24, 128, 192))
    metrics = extract_frame_metrics(frames, frame_interval_us=10, direction="right")
@@ -42,13 +42,11 @@ Quick Start
 Core Modules
 ============
 
-- ``plume_dynamics.alignment``: perspective alignment for plume frame stacks.
-- ``plume_dynamics.datasets``: HDF5 plume dataset loading helpers.
-- ``plume_dynamics.metrics``: connected-component area and centroid metrics.
-- ``plume_dynamics.velocity``: plume-front distance and velocity extraction.
-- ``plume_dynamics.plume_io``: plume frame I/O and starter metrics.
-- ``plume_dynamics.visualization`` and ``plume_dynamics.plotting``: image grids,
-  labels, colorbars, and publication plotting helpers.
+- ``plume_dynamics.analysis``: alignment, datasets, metrics, profiles, and
+  analysis workflows.
+- ``plume_dynamics.io``: HDF5, frame-stack, and video-loading helpers.
+- ``plume_dynamics.viz``: image grids, metric plots, and video rendering.
+- ``plume_dynamics.materials``: electrical-property and XRD helpers.
 - ``plume_dynamics.ml``: optional model, dataset, and training utilities.
 
 Versioning And Publishing

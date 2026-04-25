@@ -1,8 +1,10 @@
+"""Reusable plotting helpers for plume image grids."""
+
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import patheffects
 # import torch
-from utils import NormalizeData
+
+from ..utils import NormalizeData, labelfigs, layout_fig, number_to_letters
 
 def create_axes_grid(n_plots, n_per_row, plot_height, n_rows=None, figsize='auto'):
     """
@@ -26,7 +28,7 @@ def create_axes_grid(n_plots, n_per_row, plot_height, n_rows=None, figsize='auto
         raise ValueError("figsize must be a tuple or 'auto'")
     
     fig, axes = plt.subplots(n_plots//n_per_row+1*int(n_plots%n_per_row>0), n_per_row, figsize=figsize)
-    trim_axes(axes, n_plots)
+    axes = trim_axes(axes, n_plots)
     return fig, axes
 
 
@@ -39,9 +41,10 @@ def trim_axes(axs, N):
     # for ax in axs[N:]:
     #     ax.remove()
     # return axs[:N]
-    for i in range(N, len(axs.flatten())):
-        axs.flatten()[i].remove()
-    return axs.flatten()[:N]
+    axes = np.asarray(axs).ravel()
+    for i in range(N, len(axes)):
+        axes[i].remove()
+    return axes[:N]
 
 
 def show_images(images, labels=None, img_per_row=8, img_height=1, label_size=12, title=None, show_colorbar=False, 
@@ -76,7 +79,7 @@ def show_images(images, labels=None, img_per_row=8, img_height=1, label_size=12,
         else:
             fig, axes = create_axes_grid(len(images), img_per_row, img_height, n_rows=None, figsize='auto')
         
-    axes = axes.flatten()
+    axes = np.asarray(axes).ravel()
     # if hist_bins:
     #     trim_axes(axes, len(images)*2)
     # else:
@@ -143,63 +146,3 @@ def show_images(images, labels=None, img_per_row=8, img_height=1, label_size=12,
     #     plt.show()
     
     
-def labelfigs(ax, number=None, style="wb",
-              loc="tl", string_add="", size=8,
-              text_pos="center", inset_fraction=(0.15, 0.15), **kwargs):
-
-    # initializes an empty string
-    text = ""
-
-    # Sets up various color options
-    formatting_key = {
-        "wb": dict(color="w", linewidth=.75),
-        "b": dict(color="k", linewidth=0),
-        "w": dict(color="w", linewidth=0),
-    }
-
-    # Stores the selected option
-    formatting = formatting_key[style]
-
-    xlim = ax.get_xlim()
-    ylim = ax.get_ylim()
-
-    x_inset = (xlim[1] - xlim[0]) * inset_fraction[1]
-    y_inset = (ylim[1] - ylim[0]) * inset_fraction[0]
-
-    if loc == 'tl':
-        x, y = xlim[0] + x_inset, ylim[1] - y_inset
-    elif loc == 'tr':
-        x, y = xlim[1] - x_inset, ylim[1] - y_inset
-    elif loc == 'bl':
-        x, y = xlim[0] + x_inset, ylim[0] + y_inset
-    elif loc == 'br':
-        x, y = xlim[1] - x_inset, ylim[0] + y_inset
-    elif loc == 'ct':
-        x, y = (xlim[0] + xlim[1]) / 2, ylim[1] - y_inset
-    elif loc == 'cb':
-        x, y = (xlim[0] + xlim[1]) / 2, ylim[0] + y_inset
-    else:
-        raise ValueError(
-            "Invalid position. Choose from 'tl', 'tr', 'bl', 'br', 'ct', or 'cb'.")
-
-    text += string_add
-
-    if number is not None:
-        text += number_to_letters(number)
-
-    text_ = ax.text(x, y, text, va='center', ha='center',
-                      path_effects=[patheffects.withStroke(
-                      linewidth=formatting["linewidth"], foreground="k")],
-                      color=formatting["color"], size=size, **kwargs
-                      )
-
-    text_.set_zorder(np.inf)
-
-    
-def number_to_letters(num):
-    letters = ''
-    while num >= 0:
-        num, remainder = divmod(num, 26)
-        letters = chr(97 + remainder) + letters
-        num -= 1  # decrease num by 1 because we have processed the current digit
-    return letters

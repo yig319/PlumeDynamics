@@ -4,11 +4,10 @@ import numpy as np
 import h5py
 import matplotlib.pyplot as plt
 import pandas as pd
-import sys
-sys.path.append('../../../src')
-from plume_dynamics.alignment import align_plumes
-from plume_dynamics.datasets import plume_dataset
-from plume_dynamics.visualization import show_images
+
+from plume_dynamics.analysis.alignment import align_plumes
+from plume_dynamics.analysis.datasets import plume_dataset
+from plume_dynamics.viz.images import show_images
 
 
 
