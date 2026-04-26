@@ -31,6 +31,10 @@ metrics = extract_frame_metrics(frames, frame_interval_us=10, direction="right")
 fig, axes = plot_sample_frames(frames, n_frames=8)
 ```
 
+See [`USAGE.md`](USAGE.md) for a practical guide to frame loading, metrics,
+plume-facing visualization, and how `plume_dynamics.viz` uses `sci-viz-utils`
+without giving up the editable plume-specific API.
+
 ## Notebook Workflow
 
 For notebook analysis, the preferred entry point is:

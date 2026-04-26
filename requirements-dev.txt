@@ -1,4 +1,5 @@
 # Development requirements.
+-e ../sci-viz-utils
 -r requirements.txt
 
 pytest
