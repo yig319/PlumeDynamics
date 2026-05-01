@@ -1,35 +1,39 @@
 """Input/output helpers for HDF5 data, frame stacks, and video files."""
 
-from .frames import (
+from .hdf5 import (
     check_fragmentation,
-    extract_frame_metrics,
-    iter_video_frames,
-    load_frame_stack,
+    find_h5_frame_dataset,
     load_h5_examples,
     load_h5_frames,
-    load_json,
     load_plumes,
-    normalize_frame,
-    plot_metrics,
-    plot_sample_frames,
-    remove_all_0_plume,
     show_h5_dataset_name,
-    threshold_frame,
+)
+from .metadata import load_json
+from .stacks import (
+    as_plume_stack,
+    iter_video_frames,
+    iter_plume_batches,
+    load_frame_stack,
+    load_h5_plume_stack,
+    load_plume_stack,
+    select_plume_frames,
+    slice_plume_stack,
 )
 
 __all__ = [
+    "as_plume_stack",
     "check_fragmentation",
-    "extract_frame_metrics",
+    "find_h5_frame_dataset",
     "iter_video_frames",
+    "iter_plume_batches",
     "load_frame_stack",
     "load_h5_examples",
     "load_h5_frames",
+    "load_h5_plume_stack",
     "load_json",
+    "load_plume_stack",
     "load_plumes",
-    "normalize_frame",
-    "plot_metrics",
-    "plot_sample_frames",
-    "remove_all_0_plume",
+    "select_plume_frames",
     "show_h5_dataset_name",
-    "threshold_frame",
+    "slice_plume_stack",
 ]

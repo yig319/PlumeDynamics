@@ -25,7 +25,6 @@ Optional feature groups:
 .. code-block:: bash
 
    pip install -e ".[ml]"
-   pip install -e ".[xrd]"
 
 Quick Start
 ===========
@@ -33,10 +32,13 @@ Quick Start
 .. code-block:: python
 
    import numpy as np
-   from plume_dynamics.io import extract_frame_metrics, plot_sample_frames
+   from plume_dynamics.analysis import extract_plume_metrics
+   from plume_dynamics.io import select_plume_frames
+   from plume_dynamics.viz import plot_sample_frames
 
-   frames = np.random.random((24, 128, 192))
-   metrics = extract_frame_metrics(frames, frame_interval_us=10, direction="right")
+   plumes = np.random.random((3, 24, 128, 192))
+   frames = select_plume_frames(plumes, plume_index=0)
+   metrics = extract_plume_metrics(plumes, frame_interval_us=10, direction="right")
    fig, axes = plot_sample_frames(frames, n_frames=8)
 
 Core Modules
@@ -46,8 +48,11 @@ Core Modules
   analysis workflows.
 - ``plume_dynamics.io``: HDF5, frame-stack, and video-loading helpers.
 - ``plume_dynamics.viz``: image grids, metric plots, and video rendering.
-- ``plume_dynamics.materials``: electrical-property and XRD helpers.
+- ``plume_dynamics.property_analysis``: electrical-property helpers.
 - ``plume_dynamics.ml``: optional model, dataset, and training utilities.
+
+XRD scan and reciprocal-space-map helpers live in the separate ``XRD-utils``
+package.
 
 Versioning And Publishing
 =========================
